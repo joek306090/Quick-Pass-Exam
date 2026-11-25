@@ -715,6 +715,12 @@ def generate_package(input_path: Path, output_dir: Path, *, profile_name: str,
             failed.parent.mkdir(parents=True, exist_ok=True)
             failed.write_text(json.dumps(method_coverage, ensure_ascii=False, indent=2), encoding="utf-8")
             raise ContractError(f"计算方法覆盖检查未通过；按报告逐题补齐后重新生成：{failed}")
+    generation_review = {"status": "not_checked"}
+    if agent_content:
+        from generation_review import review_generation
+        inventory = _load_json(source_inventory) if source_inventory else None
+        generation_review = review_generation(final_questions, concepts, cases, methods,
+                                               sources, teaching_evidence, profile, inventory)
     _isolate_generated_references(final_questions, concepts, cases, sources)
     report = _validate_package(
         final_questions, concepts, require_cornell_pairs=(mode in {"llm", "agent"}),
@@ -749,6 +755,7 @@ def generate_package(input_path: Path, output_dir: Path, *, profile_name: str,
     quality_summary = {
         "structural_status": "passed",
         "source_coverage_status": source_coverage["status"],
+        "generation_review_status": generation_review["status"],
         "method_coverage_status": method_coverage["status"],
         "content_status": content["status"],
         "case_status": case_quality["status"],
@@ -761,7 +768,8 @@ def generate_package(input_path: Path, output_dir: Path, *, profile_name: str,
     }
     quality_report = {"origin": origin, "package": report, "content": content,
                       "cases": case_quality, "browser": {"status": "not_checked"},
-                      "source_coverage": source_coverage, "method_coverage": method_coverage}
+                      "source_coverage": source_coverage, "method_coverage": method_coverage,
+                      "generation_review": generation_review}
     if content["status"] == "blocked":
         failure_report.parent.mkdir(parents=True, exist_ok=True)
         failure_report.write_text(json.dumps(quality_report, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -833,6 +841,7 @@ def generate_package(input_path: Path, output_dir: Path, *, profile_name: str,
             "sub_question_count": case_quality["sub_question_count"],
             "method_count": len(methods), "case_quality_status": case_quality["status"],
             "quality_status": ("review_required" if case_quality["status"] == "review_required"
+                               or generation_review["status"] == "review_required"
                                else content["status"]),
             **quality_summary,
             # The current compatible client exposes the requested model only;

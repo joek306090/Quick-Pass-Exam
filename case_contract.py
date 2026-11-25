@@ -252,6 +252,11 @@ def validate_cases_methods(raw_cases: Any, raw_methods: Any, *, sources: list[di
             findings.append({"code": "METHOD_CASE_BASIS_MISSING", "id": mid})
         if method["type"] == "calculation" and (not method["formula"].strip() or not method["steps"]):
             findings.append({"code": "METHOD_CALCULATION_INCOMPLETE", "id": mid})
+        if method["type"] == "calculation" and "qp_steps" not in method:
+            reason = method.get("qp_steps_omission_reason")
+            findings.append({"code": "METHOD_QP_STEPS_MISSING", "id": mid,
+                             "reason": reason if isinstance(reason, str) and reason.strip() else "未说明原因",
+                             "repair": "默认编写有效分步数据；不能可靠编写时逐卡填写 qp_steps_omission_reason，保留纯文字，不凑步骤。"})
         if "qp_steps" in method:
             from qp_steps import basis_hash, validate
             block = method["qp_steps"]

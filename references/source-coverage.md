@@ -22,6 +22,8 @@
 
 ## 2. 生成前后两次核对
 
+另按 `generation-quality.md` 冻结用户确认的 `confirmed_materials`，为 included 教辅记录 `parse_review`。`quality-report.json.generation_review.teaching` 独立列出每份教辅关联考点数与没有教辅证据的考点；原始文件扫描 passed 不代表已解析或已关联，零关联即使有理由也必须报告 warning。
+
 生成入口继续使用 `--source-root`、`--source-inventory`，必要时加 `--source-scope`。有 `input_scope` 时，命令行与其不一致会失败。
 
 - **生成前**：原始文档集合与清单一一对应；记录每份原件（含排除文件）的 SHA-256；入包文件必须与 sources 哈希相同。

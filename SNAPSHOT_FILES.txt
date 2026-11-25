@@ -21,6 +21,9 @@ examples/learning-package-input.json
 examples/questions.json
 generator.py
 source_coverage.py
+generation_review.py
+references/generation-quality.md
+tests/test_generation_review.py
 package_audit.py
 scripts/verify-package.py
 references/source-coverage.md
@@ -42,6 +45,7 @@ tests/test_cornell_dom.cjs
 tests/test_generation.py
 tests/test_renderer.py
 tools/build_snapshot.py
+tools/smoke_generation_quality.py
 vendor/__init__.py
 vendor/concept_relation_builder.py
 vendor/exam_point_extractor.py
