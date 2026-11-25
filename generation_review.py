@@ -29,6 +29,9 @@ def review_generation(questions, concepts, cases, methods, sources, evidence, pr
                 walk(row.get("children"))
 
     walk(profile.get("syllabus_tree"))
+    if not concepts:
+        for section in ("chapters", "levels", "graph"):
+            flag(section, "CONCEPTS_EMPTY", "package", "无考点可验收；先核实是否漏生成，不能把空考点集当作章节/等级/图谱通过。")
     if concepts and (not nodes or not profile.get("syllabus_authority")):
         flag("chapters", "SYLLABUS_AUTHORITY_MISSING", "profile",
              "在 profile 补入已核验的 syllabus_authority 和 syllabus_tree；不可用领域列表代替考纲。")
@@ -82,6 +85,8 @@ def review_generation(questions, concepts, cases, methods, sources, evidence, pr
                  "逐档说明依据并定位真题 ID/统计范围、考纲权重或本卡证据 ID；不能为过校验随填。")
         relations = c.get("learning_relations")
         local = 0
+        if "learning_relations" in c and not isinstance(relations, dict):
+            flag("graph", "LEARNING_RELATION_INVALID", cid, "learning_relations 必须为关系对象，不能用字符串/数组替代。")
         if isinstance(relations, dict):
             if set(relations) - set(RELATIONS):
                 flag("graph", "LEARNING_RELATION_UNSUPPORTED", cid, "沿用 prerequisites/next_concepts/related_concepts；包含/对比/易混用 related_concepts 并写明学习理由。")
@@ -112,7 +117,8 @@ def review_generation(questions, concepts, cases, methods, sources, evidence, pr
     files = (inventory or {}).get("files", [])
     declared = {f.get("path"): f for f in files if isinstance(f, dict)}
     confirmed = (inventory or {}).get("confirmed_materials")
-    if not isinstance(confirmed, list) or not confirmed:
+
+    if not isinstance(confirmed, list):
         flag("teaching", "CONFIRMED_MATERIALS_UNKNOWN", "inventory", "冻结用户确认的教辅相对路径清单 confirmed_materials，包括暂缺原件；不要只从已复制目录反推。")
     else:
         for name in confirmed:
@@ -120,18 +126,23 @@ def review_generation(questions, concepts, cases, methods, sources, evidence, pr
                 flag("teaching", "CONFIRMED_MATERIAL_NOT_IN_INVENTORY", str(name), "补登记该教辅并取回原件；缺文件时明确报告，不得缩小用户清单。")
             elif declared[name].get("decision") != "included":
                 flag("teaching", "CONFIRMED_MATERIAL_NOT_INCLUDED", name, "核对用户确认的排除理由；未读/无法解析不算完成。")
+            elif declared[name].get("source_id") not in teaching:
+                flag("teaching", "CONFIRMED_MATERIAL_SOURCE_MISMATCH", name, "用户确认教辅须对应 teaching_material 来源；核查错误 role/source_id，不得借题库角色跳过解析与关联核验。")
+
     material_rows = []
     for sid, source in teaching.items():
         entries = [f for f in files if isinstance(f, dict) and f.get("source_id") == sid and f.get("decision") == "included"]
         parse = entries[0].get("parse_review") if entries else None
         if not entries:
             flag("teaching", "TEACHING_NOT_IN_INVENTORY", sid, "在用户清单登记 included/source_id。")
+        elif len(entries) != 1:
+            flag("teaching", "TEACHING_INVENTORY_AMBIGUOUS", sid, "多份清单原件共用一个 source_id；逐份登记独立来源与解析状态。")
         good_parse = (isinstance(parse, dict) and isinstance(parse.get("status"), str)
                       and parse["status"] in {"text", "ocr", "visual"})
         if good_parse and isinstance(parse, dict):
             good_parse = (isinstance(parse.get("reason"), str) and bool(parse["reason"].strip())
                           and type(parse.get("pages_read")) is int and parse["pages_read"] > 0
-                          and (source.get("page_count") is None or parse["pages_read"] == source["page_count"]))
+                          and parse["pages_read"] == source.get("page_count", 1))
             if parse.get("status") in {"text", "ocr"}:
                 good_parse &= type(parse.get("text_chars")) is int and parse["text_chars"] > 0
         if not good_parse:
@@ -139,6 +150,7 @@ def review_generation(questions, concepts, cases, methods, sources, evidence, pr
         if not linked[sid]:
             flag("teaching", "TEACHING_ZERO_CONCEPTS", sid, "回读原件并建立真实证据；不适用/证据不足时报告具体原因，不能静默通过。")
         material_rows.append({"source_id": sid, "path": source.get("path"),
+                              "inventory_entries": entries,
                               "parse_review": parse, "concept_count": len(linked[sid]),
                               "concept_ids": sorted(linked[sid])})
     supported = set().union(*linked.values()) if linked else set()

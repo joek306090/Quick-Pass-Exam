@@ -124,6 +124,36 @@ def test_missing_steps_report_each_reason_without_inventing_steps():
     assert "qp_steps" not in normalized[0]
 
 
+def test_confirmed_book_cannot_hide_under_question_bank_role():
+    p = payload()
+    p["sources"][0]["role"] = "question_bank"
+    assert "CONFIRMED_MATERIAL_SOURCE_MISMATCH" in codes(review_generation(**p))
+
+
+def test_duplicate_inventory_and_invalid_graph_declaration_stay_visible():
+    p = payload()
+    p["inventory"]["files"].append({"path": "other.pdf", "decision": "included", "source_id": "guide",
+                                  "parse_review": {"status": "unread"}})
+    p["concepts"][0]["learning_relations"] = "invalid"
+    result = review_generation(**p)
+    assert codes(result) >= {"TEACHING_INVENTORY_AMBIGUOUS", "LEARNING_RELATION_INVALID"}
+    assert len(result["teaching"]["materials"][0]["inventory_entries"]) == 2
+
+
+def test_empty_concepts_never_pass_three_dimensions():
+    p = payload()
+    p["concepts"] = []
+    result = review_generation(**p)
+    assert all(result[s]["status"] == "review_required" for s in ("chapters", "levels", "graph"))
+
+
+def test_nonpaginated_material_is_one_document_unit():
+    p = payload()
+    p["sources"][0].pop("page_count")
+    p["inventory"]["files"][0]["parse_review"]["pages_read"] = 999
+    assert "TEACHING_PARSE_UNVERIFIED" in codes(review_generation(**p))
+
+
 def test_real_generation_persists_review_and_unknown(tmp_path):
     from test_agent_content import _agent_payload, _write
     from generator import generate_package
