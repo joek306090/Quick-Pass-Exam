@@ -1,12 +1,12 @@
-# 可选计算分步数据（qp-steps-v1）
+# 计算方法默认编写分步数据（qp-steps-v1）
 
-仅为本次新编写的 calculation 方法卡提供 `methods[].qp_steps` 对象；由宿主 Agent 使用自己的模型编写，Skill 不增加任何模型调用。缺字段兼容旧输入，不补块；重打包已有 payload 不生成缺失块。已有 output 拒绝覆盖，不做跨包历史判新旧或增量 merge。
+calculation 方法卡默认要求编写 `methods[].qp_steps` 对象；由宿主 Agent 使用自己的模型编写，Skill 不增加任何模型调用。不能可靠编写时仅保留文字，填写具体 `qp_steps_omission_reason`；缺失字段逐卡报告 `METHOD_QP_STEPS_MISSING`，没有原因时报告「未说明原因」，不能无效步骤凑数。缺字段兼容旧输入但不静默通过；重打包已有 payload 不自动生成缺失块。已有 output 拒绝覆盖，不做跨包历史判新旧或增量 merge。
 
 ## 输入、输出与生成要求
 
 输入依据是当前方法的完整 `title` 与非空纯文本/Markdown `formula`（不含「公式定义」标题）。公式应为一个节正文，不嵌入一级/二级标题；空公式或会拆节的公式只保留文字、不发布块。保留原题、适用条件、假设与单位，不能把合成演示说成原题答案。
 
-输出字段是可选的 `qp_steps`，其完整 JSON 合同见 `schema/qp-steps-v1.schema.json`。`method` 必须与当前 `title` 完全一致；`provenance.generator` 填 `skill`，`source_questions` 填真实关联题目 ID，`generated_at` 填 ISO-8601 时间。`provenance.basis_hash` 必须使用同包 `qp_steps.basis_hash(title, formula)` 计算：两段分别按明确 ECMAScript 空白集合归一为单空格后去首尾空格，以一个 LF 分隔，再 UTF-8 SHA-256；不去 Markdown、不改标点、不做 Unicode 规范化。不要猜 hash。
+输出字段是 calculation 默认要求的 `qp_steps`，不能可靠生成时用 `qp_steps_omission_reason` 说明文字降级原因。其完整 JSON 合同见 `schema/qp-steps-v1.schema.json`。`method` 必须与当前 `title` 完全一致；`provenance.generator` 填 `skill`，`source_questions` 填真实关联题目 ID，`generated_at` 填 ISO-8601 时间。`provenance.basis_hash` 必须使用同包 `qp_steps.basis_hash(title, formula)` 计算：两段分别按明确 ECMAScript 空白集合归一为单空格后去首尾空格，以一个 LF 分隔，再 UTF-8 SHA-256；不去 Markdown、不改标点、不做 Unicode 规范化。不要猜 hash。
 
 对象最小形状示意（省略号为说明，不是可提交数据）：
 

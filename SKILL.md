@@ -52,7 +52,7 @@ Agent 应生成 `agent-content.json`，其中包含 `schema_version: "quick-pass
 
 生成或修复题目内容前必须读取 @references/method-coverage.md，逐题建立 `method_coverage` 清单；选择题和案例小问均需分类。按真实算法拆分并补齐方法，禁止只用考点标签批量关联或固定卡片数量。生成前后检查与浏览器验收通过后，按该规范向用户补报。
 
-为本次新计算方法编写可选 `methods[].qp_steps` 时必须读取 @references/qp-steps.md 与 `schema/qp-steps-v1.schema.json`。输入依据为当前 `title`/`formula`，输出为 Schema 对象并用 `qp_steps.basis_hash(title, formula)` 填 provenance；由宿主 Agent 编写，不新增模型调用。旧输入无块不补，已有块依据变化则删块保文字；现有输出目录仍拒绝覆盖。
+为 calculation 方法卡默认编写 `methods[].qp_steps`，必须读取 @references/qp-steps.md 与 `schema/qp-steps-v1.schema.json`。输入依据为当前 `title`/`formula`，输出为 Schema 对象并用 `qp_steps.basis_hash(title, formula)` 填 provenance；由宿主 Agent 编写，不新增模型调用。不能可靠编写时降级为纯文字，逐卡填写 `qp_steps_omission_reason`，报告缺失及原因，禁止无效步骤凑数。重打包不自动补块，已有块依据变化则删块保文字；现有输出目录仍拒绝覆盖。
 
 ## 案例题与自评
 
@@ -69,6 +69,8 @@ Agent 必须从原件检查完整背景、图表、续页和答案归属：
 交付前按案例题规范检查计算案例、多问简答案例、跨页带图案例、缺失或错位答案案例，以及选择题与案例题混合学习包，并验证原页跳转。
 
 ## 编写和审阅知识卡
+
+编写 payload 前读取 @references/generation-quality.md：逐份核对用户确认教辅的清单、解析状态与关联考点数；章节对齐权威考纲节点；四档 `study_advice` 带依据；`learning_relations` 图谱独立验收。为选择题、案例和子问填写 `needs_figure: true/false/null`，缺失标未知，不能默认无图。这些要求必须落实到 JSON 与交付报告，不只是文字承诺。
 
 编写真实 Agent 内容前，必须读取 @references/card-authoring.md 和 @references/card-quality-examples.md。`--agent-content` 不运行旧内容生成器的 prompt，因此 Agent 必须主动落实其中的教学质量要求。README 中的最小 JSON 只演示接口，不是合格知识卡的质量目标。
 

@@ -64,7 +64,10 @@ def test_review_status_survives_delivery_without_claiming_semantic_truth(tmp_pat
     manifest = json.loads((out / 'manifest.json').read_text())
     report = json.loads((out / 'reports/quality-report.json').read_text())
     web = json.loads((out / 'web/manifest.json').read_text())
-    assert manifest['quality_status'] == manifest['content_status'] == expected
+    assert manifest['content_status'] == expected
+    # An Agent review declaration does not waive missing chapters/levels/graph.
+    assert manifest['quality_status'] == manifest['generation_review_status'] == 'review_required'
+    assert report['generation_review']['chapters']['status'] == 'review_required'
     assert manifest['structural_status'] == 'passed'
     assert manifest['browser_status'] == report['browser']['status'] == 'not_checked'
     assert report['content']['status'] == expected
