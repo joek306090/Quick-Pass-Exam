@@ -147,6 +147,13 @@ def test_empty_concepts_never_pass_three_dimensions():
     assert all(result[s]["status"] == "review_required" for s in ("chapters", "levels", "graph"))
 
 
+def test_empty_syllabus_id_cannot_legitimize_empty_chapter():
+    p = payload()
+    p["profile"]["syllabus_tree"].append({"id": "", "title": "bad authority node"})
+    p["concepts"][0]["chapter"] = ""
+    assert "CONCEPT_CHAPTER_UNMATCHED" in codes(review_generation(**p))
+
+
 def test_nonpaginated_material_is_one_document_unit():
     p = payload()
     p["sources"][0].pop("page_count")

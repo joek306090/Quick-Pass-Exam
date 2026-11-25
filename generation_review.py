@@ -44,7 +44,7 @@ def review_generation(questions, concepts, cases, methods, sources, evidence, pr
     for c in concepts:
         cid = c["id"]
         chapter = c.get("chapter")
-        if not isinstance(chapter, str) or chapter not in nodes:
+        if not isinstance(chapter, str) or not chapter.strip() or chapter not in nodes:
             flag("chapters", "CONCEPT_CHAPTER_UNMATCHED", cid,
                  "chapter 填权威 syllabus_tree 节点 ID；无法对应时保留缺口，不得猜章节。")
         advice = c.get("study_advice")
